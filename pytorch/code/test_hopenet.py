@@ -21,11 +21,11 @@ def parse_args():
     parser.add_argument('--gpu', dest='gpu_id', help='GPU device id to use [0]',
             default=0, type=int)
     parser.add_argument('--data_dir', dest='data_dir', help='Directory path for data.',
-          default='', type=str)
+          default='/data2/gaofuxun/data/head-pose/', type=str)
     parser.add_argument('--filename_list', dest='filename_list', help='Path to text file containing relative paths for every example.',
-          default='', type=str)
+          default='../data/AFLW2000.txt', type=str)
     parser.add_argument('--snapshot', dest='snapshot', help='Name of model snapshot.',
-          default='', type=str)
+          default='./output/snapshots/gfx_epoch_9.pkl', type=str)
     parser.add_argument('--batch_size', dest='batch_size', help='Batch size.',
           default=1, type=int)
     parser.add_argument('--save_viz', dest='save_viz', help='Save images with pose cube.',
@@ -44,7 +44,7 @@ if __name__ == '__main__':
     snapshot_path = args.snapshot
 
     # ResNet50 structure
-    model = hopenet.Hopenet(torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 66)
+    model = hopenet.Hopenet(torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 68)
 
     print 'Loading snapshot.'
     # Load snapshot
@@ -88,7 +88,7 @@ if __name__ == '__main__':
     model.eval()  # Change model to 'eval' mode (BN uses moving mean/var).
     total = 0
 
-    idx_tensor = [idx for idx in xrange(66)]
+    idx_tensor = [idx for idx in xrange(68)]
     idx_tensor = torch.FloatTensor(idx_tensor).cuda(gpu)
 
     yaw_error = .0

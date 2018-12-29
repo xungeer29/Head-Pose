@@ -35,7 +35,7 @@ def parse_args():
           default='', type=str)
     parser.add_argument('--output_string', dest='output_string', help='String appended to output snapshots.', default = '', type=str)
     parser.add_argument('--alpha', dest='alpha', help='Regression loss coefficient.',
-          default=0.001, type=float)
+          default=0.001, type=float) # best result: alpha = 2
     parser.add_argument('--snapshot', dest='snapshot', help='Path of model snapshot.',
           default='', type=str)
 
@@ -147,7 +147,8 @@ if __name__ == '__main__':
     for epoch in range(num_epochs):
         for i, (images, labels, cont_labels, name) in enumerate(train_loader):
             images = Variable(images).cuda(gpu)
-            #print labels
+            print labels
+            print cont_labels
 
             # Binned labels
             label_yaw = Variable(labels[:,0]).cuda(gpu)

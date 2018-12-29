@@ -97,6 +97,7 @@ class Pose_300W_LP(Dataset):
 
     def __getitem__(self, index):
         img = Image.open(os.path.join(self.data_dir, self.X_train[index] + self.img_ext)) # 读取一张图像
+        im = cv2.imread(os.path.join(self.data_dir, self.X_train[index] + self.img_ext)) # 读取一张图像
         img = img.convert(self.image_mode)
         mat_path = os.path.join(self.data_dir, self.y_train[index] + self.annot_ext) # 读取该图像的mat格式标签
 
@@ -115,6 +116,8 @@ class Pose_300W_LP(Dataset):
         y_max += 0.6 * k * abs(y_max - y_min)
         img = img.crop((int(x_min), int(y_min), int(x_max), int(y_max)))
 
+        im = im[int(y_min):int(y_max), int(x_min):int(x_max)]
+        #cv2.imwrite('1.jpg', im) # check whether the labels is correct
         # We get the pose in radians
         pose = utils.get_ypr_from_mat(mat_path)
         # And convert to degrees.

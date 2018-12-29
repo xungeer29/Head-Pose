@@ -22,16 +22,16 @@ def parse_args():
     parser.add_argument('--gpu', dest='gpu_id', help='GPU device id to use [0]',
             default=0, type=int)
     parser.add_argument('--num_epochs', dest='num_epochs', help='Maximum number of training epochs.',
-          default=5, type=int)
+          default=25, type=int)
     parser.add_argument('--batch_size', dest='batch_size', help='Batch size.',
-          default=16, type=int)
+          default=64, type=int)
     parser.add_argument('--lr', dest='lr', help='Base learning rate.',
           default=0.001, type=float)
     parser.add_argument('--data_dir', dest='data_dir', help='Directory path for data.',
-          default='', type=str)
+          default='/data2/gaofuxun/data/head-pose/', type=str)
     parser.add_argument('--filename_list', dest='filename_list', help='Path to text file containing relative paths for every example.',
-          default='', type=str)
-    parser.add_argument('--output_string', dest='output_string', help='String appended to output snapshots.', default = '', type=str)
+          default='../data/300W-LP.txt', type=str)
+    parser.add_argument('--output_string', dest='output_string', help='String appended to output snapshots.', default = 'resnet50', type=str)
     parser.add_argument('--dataset', dest='dataset', help='Dataset type.', default='Pose_300W_LP', type=str)
 
     args = parser.parse_args()
@@ -122,10 +122,14 @@ if __name__ == '__main__':
                                   {'params': get_non_ignored_params(model), 'lr': args.lr},
                                   {'params': get_fc_params(model), 'lr': args.lr * 5}],
                                    lr = args.lr)
+    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, 
+                milestones=[int(args.num_epochs/4), int(args.num_epochs/2), int(args.num_epochs*3/4)], gamma=0.1)
 
     print 'Ready to train network.'
     print 'First phase of training.'
+    model.train()
     for epoch in range(num_epochs):
+        scheduler.step()
         for i, (images, labels, cont_labels, name) in enumerate(train_loader):
             images = Variable(images).cuda(gpu)
 
