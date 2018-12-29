@@ -80,8 +80,8 @@ if __name__ == '__main__':
     batch_size = args.batch_size
     gpu = args.gpu_id
 
-    if not os.path.exists('output/snapshots'):
-        os.makedirs('output/snapshots')
+    if not os.path.exists('../output/snapshots'):
+        os.makedirs('../output/snapshots')
 
     # ResNet50
     model = hopenet.ResNet(torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 3)
@@ -149,4 +149,4 @@ if __name__ == '__main__':
         if epoch % 1 == 0 and epoch < num_epochs:
             print 'Taking snapshot...'
             torch.save(model.state_dict(),
-            'output/snapshots/' + args.output_string + '_epoch_'+ str(epoch+1) + '.pkl')
+            '../output/snapshots/' + args.output_string + '_epoch_'+ str(epoch+1) + '.pkl')
