@@ -43,7 +43,7 @@ if __name__ == '__main__':
     gpu = args.gpu_id
     snapshot_path = args.snapshot
 
-    model = hopenet.AlexNet(66)
+    model = hopenet.AlexNet(68)
 
     print 'Loading snapshot.'
     # Load snapshot
@@ -87,7 +87,7 @@ if __name__ == '__main__':
     model.eval()  # Change model to 'eval' mode (BN uses moving mean/var).
     total = 0
 
-    idx_tensor = [idx for idx in xrange(66)]
+    idx_tensor = [idx for idx in xrange(68)]
     idx_tensor = torch.FloatTensor(idx_tensor).cuda(gpu)
 
     yaw_error = .0

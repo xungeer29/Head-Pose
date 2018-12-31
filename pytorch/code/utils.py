@@ -6,6 +6,8 @@ import scipy.io as sio
 import cv2
 import math
 from math import cos, sin
+import matplotlib.pyplot as plt
+plt.switch_backend('agg')
 
 def softmax_temperature(tensor, temperature):
     result = torch.exp(tensor / temperature)
@@ -115,3 +117,35 @@ def draw_axis(img, yaw, pitch, roll, tdx=None, tdy=None, size = 100):
     cv2.line(img, (int(tdx), int(tdy)), (int(x3),int(y3)),(255,0,0),2)
 
     return img
+
+# smooth
+def smooth(scalar, weight):
+    last = scalar[0] 
+    smoothed = []
+    for point in scalar:
+        smoothed_val = last * weight + (1 - weight) * point
+        smoothed.append(smoothed_val)
+        last = smoothed_val
+    return smoothed
+
+def draw_loss(yaw, pitch, roll, weight, name):
+    font1 = {'family': 'Times New Roman',
+             'weight': 'normal',
+             'size': 9, 
+            }
+    yaw = smooth(yaw, weight)
+    pitch = smooth(pitch, weight)
+    roll = smooth(pitch, weight)    
+
+    x = [x for x in range(len(yaw))]
+    plt.plot(x, cls_yaw, color='b', label='yaw')
+    plt.plot(x, cls_pitch, color='g', label='pitch')
+    plt.plot(x, cls_roll, color='r', label='roll')
+    plt.legend(loc='upper right', prop=font1, frameon=False)
+    plt.xlabel('iterationos')
+    plt.ylabel('loss')
+    plt.savefig('../figs/{}.jpg'.format(name))
+    plt.savefig('../figs/{}.eps'.format(name))
+    plt.savefig('../figs/{}.tif'.format(name))
+
+    

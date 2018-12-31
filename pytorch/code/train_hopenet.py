@@ -23,17 +23,17 @@ def parse_args():
     parser.add_argument('--gpu', dest='gpu_id', help='GPU device id to use [0]',
             default=0, type=int)
     parser.add_argument('--num_epochs', dest='num_epochs', help='Maximum number of training epochs.',
-          default=5, type=int)
+          default=25, type=int)
     parser.add_argument('--batch_size', dest='batch_size', help='Batch size.',
-          default=16, type=int)
+          default=64, type=int)
     parser.add_argument('--lr', dest='lr', help='Base learning rate.',
           default=0.001, type=float)
     parser.add_argument('--dataset', dest='dataset', help='Dataset type.', default='Pose_300W_LP', type=str)
     parser.add_argument('--data_dir', dest='data_dir', help='Directory path for data.',
           default='/data2/gaofuxun/data/head-pose/', type=str)
     parser.add_argument('--filename_list', dest='filename_list', help='Path to text file containing relative paths for every example.',
-          default='', type=str)
-    parser.add_argument('--output_string', dest='output_string', help='String appended to output snapshots.', default = '', type=str)
+          default='../data/300W-LP.txt', type=str)
+    parser.add_argument('--output_string', dest='output_string', help='String appended to output snapshots.', default = 'hopenet', type=str)
     parser.add_argument('--alpha', dest='alpha', help='Regression loss coefficient.',
           default=0.001, type=float) # best result: alpha = 2
     parser.add_argument('--snapshot', dest='snapshot', help='Path of model snapshot.',
@@ -79,14 +79,19 @@ def load_filtered_state_dict(model, snapshot):
 
 if __name__ == '__main__':
     args = parse_args()
+    
+
+    if not os.path.exists('../log'):
+        os.makedirs('../log')
+    log = open('../log/hopenet.txt', 'a')
 
     cudnn.enabled = True
     num_epochs = args.num_epochs
     batch_size = args.batch_size
     gpu = args.gpu_id
 
-    if not os.path.exists('output/snapshots'):
-        os.makedirs('output/snapshots')
+    if not os.path.exists('../models'):
+        os.makedirs('../models')
 
     # ResNet50 structure
     model = hopenet.Hopenet(torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 68) # 66 姿态角度划分的等级数量，即类别数
@@ -143,12 +148,18 @@ if __name__ == '__main__':
                                   {'params': get_fc_params(model), 'lr': args.lr * 5}],
                                    lr = args.lr)
 
+    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,
+                milestones=[int(args.num_epochs/4), int(args.num_epochs/2), int(args.num_epochs*3/4)], gamma=0.1)
+
+    log.write('Train HopeNet:\n')
     print 'Ready to train network.'
+    model.train()
     for epoch in range(num_epochs):
+        scheduler.step()
         for i, (images, labels, cont_labels, name) in enumerate(train_loader):
             images = Variable(images).cuda(gpu)
-            print labels
-            print cont_labels
+            #print labels
+            #print cont_labels
 
             # Binned labels
             label_yaw = Variable(labels[:,0]).cuda(gpu)
@@ -167,6 +178,8 @@ if __name__ == '__main__':
             loss_yaw = criterion(yaw, label_yaw)
             loss_pitch = criterion(pitch, label_pitch)
             loss_roll = criterion(roll, label_roll)
+            log.write('Epoch [%d/%d], Iter [%d/%d] alpha %f | clsLosses: Yaw %.4f, Pitch %.4f, Roll %.4f | '
+                      %(epoch+1, num_epochs, i+1, len(pose_dataset)//batch_size, alpha, loss_yaw.data[0], loss_pitch.data[0], loss_roll.data[0]))
 
             # MSE loss
             yaw_predicted = softmax(yaw)
@@ -180,6 +193,8 @@ if __name__ == '__main__':
             loss_reg_yaw = reg_criterion(yaw_predicted, label_yaw_cont)
             loss_reg_pitch = reg_criterion(pitch_predicted, label_pitch_cont)
             loss_reg_roll = reg_criterion(roll_predicted, label_roll_cont)
+            log.write('mseLosses: Yaw %.4f, Pitch %.4f, Roll %.4f | '
+                      %(loss_reg_yaw.data[0], loss_reg_pitch.data[0], loss_reg_roll.data[0]))
 
             # Total loss
             loss_yaw += alpha * loss_reg_yaw
@@ -192,6 +207,8 @@ if __name__ == '__main__':
             torch.autograd.backward(loss_seq, grad_seq)
             optimizer.step()
 
+            log.write('totalLosses: Yaw %.4f, Pitch %.4f, Roll %.4f\n'
+                      %(loss_yaw.data[0], loss_pitch.data[0], loss_roll.data[0]))
             if (i+1) % 100 == 0:
                 print ('Epoch [%d/%d], Iter [%d/%d] Losses: Yaw %.4f, Pitch %.4f, Roll %.4f'
                        %(epoch+1, num_epochs, i+1, len(pose_dataset)//batch_size, loss_yaw.data[0], loss_pitch.data[0], loss_roll.data[0]))
@@ -200,4 +217,5 @@ if __name__ == '__main__':
         if epoch % 1 == 0 and epoch < num_epochs:
             print 'Taking snapshot...'
             torch.save(model.state_dict(),
-            'output/snapshots/' + args.output_string + '_epoch_'+ str(epoch+1) + '.pkl')
+            '../models/' + args.output_string + '_epoch_'+ str(epoch+1) + '.pkl')
+        log.write('\n\n')
